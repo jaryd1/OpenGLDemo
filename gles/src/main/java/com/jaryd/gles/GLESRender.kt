@@ -1,10 +1,9 @@
 package com.jaryd.gles
 
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.util.forEach
-import com.jaryd.gles.canvas.GLImageCanvas
-import com.jaryd.gles.canvas.GLImageOESCanvas
-import com.jaryd.gles.canvas.GLOverlayCanvas
+import com.jaryd.gles.canvas.*
 import com.jaryd.gles.utils.CoordinationUtils
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -18,6 +17,7 @@ class GLESRender {
     private val CAMERA = 0
     private val IMAGE = 1
     private val MARK = 2
+    private val FILTER = 3
 
 
     init {
@@ -30,15 +30,18 @@ class GLESRender {
 
     fun userWaterMark(buffer: ByteBuffer,width: Int,height: Int){
         canvas.append(MARK,GLOverlayCanvas(buffer,width,height))
+    }
 
+    fun useLUTFilter(lut:ByteBuffer,width: Int,height: Int){
+        canvas.append(FILTER,GLLUTCanvac(lut,width,height))
     }
 
     fun setDisplaySize(width:Int,height:Int){
         canvas.forEach { key, value ->
             value.onDisplaySizeChanged(width, height)
         }
-
         canvas[CAMERA].initFrameBuffer(width,height)
+        canvas[FILTER].initFrameBuffer(width,height)
         canvas[MARK]?.initFrameBuffer(width, height)
     }
 
@@ -51,6 +54,7 @@ class GLESRender {
 
     fun drawFrame(textureId:Int){
             var texture = canvas[CAMERA].drawFrameBuffer(textureId)
+            texture = canvas[FILTER]?.drawFrameBuffer(texture)?:texture
             texture = canvas[MARK]?.drawFrameBuffer(texture)?:texture
             canvas[IMAGE].drawFrame(texture)
     }

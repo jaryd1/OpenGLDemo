@@ -1,5 +1,6 @@
 package com.jaryd.gles
 
+import android.opengl.GLES20
 import android.opengl.GLES30
 import android.opengl.Matrix
 import java.nio.ByteBuffer
@@ -88,6 +89,34 @@ object GLESHelper {
             GLES30.GL_CLAMP_TO_EDGE
         )
         checkGlError("glTexParameter")
+        GLES30.glBindTexture(type,0)
+        return texture[0]
+    }
+
+    fun creatTextureID(type:Int,width: Int,height: Int):Int{
+        val texture = IntArray(1)
+        GLES30.glGenTextures(1,texture,0)
+        checkGlError("glGenTextures")
+        GLES30.glBindTexture(type,texture[0])
+        checkGlError("glBindTexture")
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_MIN_FILTER,
+            GLES30.GL_LINEAR
+        )
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_MAG_FILTER,
+            GLES30.GL_LINEAR
+        )
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_WRAP_S,
+            GLES30.GL_CLAMP_TO_EDGE
+        )
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_WRAP_T,
+            GLES30.GL_CLAMP_TO_EDGE
+        )
+        checkGlError("glTexParameter")
+        GLES30.glTexImage2D(type,0,GLES30.GL_RGBA,width,height,0,GLES30.GL_RGBA,GLES30.GL_UNSIGNED_BYTE,null)
         GLES30.glBindTexture(type,0)
         return texture[0]
     }

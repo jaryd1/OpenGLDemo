@@ -286,21 +286,18 @@ open class GLImageCanvas(
 
         GLES30.glUniformMatrix4fv(mMvpMatrixHandler,1,false,getMvpMatrix(),0)
 
+
+        if(mTextureId == GLESHelper.GL_NOT_INIT){
+            mTextureId = GLESHelper.creatTextureID(mTextureType,width, height)
+            GLESHelper.checkGlError("create texture")
+        }
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLESHelper.checkGlError("active texture")
-        if(mTextureId == GLESHelper.GL_NOT_INIT){
-            mTextureId = GLESHelper.creatTextureID(mTextureType)
-            GLES30.glBindTexture(mTextureType,mTextureId)
-            GLESHelper.checkGlError("bind texture")
-            data.position(0)
-            GLES30.glTexImage2D(mTextureType,0,GLES30.GL_RGBA,width,height,0,GLES30.GL_RGBA,
-                GLES30.GL_UNSIGNED_BYTE,data)
-            GLESHelper.checkGlError("glTexImage")
-        }else{
-            GLES30.glBindTexture(mTextureType,mTextureId)
-            GLES30.glTexSubImage2D(mTextureType,0,0,0,width,height,GLES30.GL_RGBA,
-                GLES30.GL_UNSIGNED_BYTE,data)
-        }
+        GLES30.glBindTexture(mTextureType,mTextureId)
+        data.position(0)
+        GLES30.glTexSubImage2D(mTextureType,0,0,0,width,height,GLES30.GL_RGBA,
+            GLES30.GL_UNSIGNED_BYTE,data)
+
 
         GLES30.glUniform1i(mInputTextureHandler,0)
         GLESHelper.checkGlError("uniform input texture $mInputTextureHandler")
