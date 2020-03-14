@@ -48,4 +48,5 @@ dependencies {
     implementation project(path: ':gles')
 
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$arch_life_cycle_version"
+    implementation project(path: ':facepp')
 }

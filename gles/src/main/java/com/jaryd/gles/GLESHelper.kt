@@ -121,6 +121,36 @@ object GLESHelper {
         return texture[0]
     }
 
+    fun creatYUVTextureID(width: Int,height: Int,isAlphaType:Boolean):Int{
+        val type = GLES30.GL_TEXTURE_2D
+        val texture = IntArray(1)
+        GLES30.glGenTextures(1,texture,0)
+        checkGlError("glGenTextures")
+        GLES30.glBindTexture(type,texture[0])
+        checkGlError("glBindTexture")
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_MIN_FILTER,
+            GLES30.GL_LINEAR
+        )
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_MAG_FILTER,
+            GLES30.GL_LINEAR
+        )
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_WRAP_S,
+            GLES30.GL_CLAMP_TO_EDGE
+        )
+        GLES30.glTexParameteri(
+            type, GLES30.GL_TEXTURE_WRAP_T,
+            GLES30.GL_CLAMP_TO_EDGE
+        )
+        checkGlError("glTexParameter")
+        val gl_type = if(isAlphaType) GLES30.GL_LUMINANCE_ALPHA else GLES30.GL_LUMINANCE
+        GLES30.glTexImage2D(type,0,gl_type,width,height,0,gl_type,GLES30.GL_UNSIGNED_BYTE,null)
+        GLES30.glBindTexture(type,0)
+        return texture[0]
+    }
+
     fun creatProgram(vertexShade:String,fragmentShade:String):Int{
         val v_shade = compileShade(GLES30.GL_VERTEX_SHADER,vertexShade)
         if(v_shade == 0){

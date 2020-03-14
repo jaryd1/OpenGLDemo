@@ -1,2 +1,3 @@
 rootProject.name='OpenGLDemo'
 include ':app', ':gles'
+include ':facepp'

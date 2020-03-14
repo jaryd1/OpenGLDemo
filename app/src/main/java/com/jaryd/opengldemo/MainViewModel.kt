@@ -1,42 +1,33 @@
 package com.jaryd.opengldemo
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
-import android.opengl.GLES30
-import android.util.Log
 import android.util.Size
-import android.view.Surface
 import androidx.lifecycle.ViewModel
+import com.jaryd.facepp.FacePPController
 import com.jaryd.gles.EglCore
-import com.jaryd.gles.EglCore.Companion.FLAG_RECORDABLE
-import com.jaryd.gles.EglCore.Companion.FLAG_TRY_GLES3
 import com.jaryd.gles.GLESHelper
 import com.jaryd.gles.GLESRender
 import com.jaryd.gles.WindowSurface
-import java.nio.ByteBuffer
-import javax.microedition.khronos.opengles.GL
-import javax.microedition.khronos.opengles.GL11Ext
 
 class MainViewModel:ViewModel() {
 
     private lateinit var cameraSurfaceTexture: SurfaceTexture
+    private lateinit var camera: CameraImp
+
 
     val onSurfaceTextureAvaliable:(context: Context, surface:SurfaceTexture, width:Int, height:Int)->Unit
         ={
         context,surface, width, height -> kotlin.run {
             val egl = EglCore()
             val window = WindowSurface(egl,surface)
-            val bitmap  = BitmapFactory.decodeStream(context.assets.open("watermark.png"))
-            val buffer = ByteBuffer.allocateDirect(bitmap.byteCount)
-            bitmap.copyPixelsToBuffer(buffer)
 
             window.makeCurrent()
             val render = GLESRender()
-            render.userWaterMark(buffer,bitmap.width,bitmap.height)
             render.setDisplaySize(width, height)
-            bitmap.recycle()
+            egl.makeNothingCurrent()
+
             val textureOES = GLESHelper.creatTextureID(GLES11Ext.GL_TEXTURE_EXTERNAL_OES)
              cameraSurfaceTexture = SurfaceTexture(textureOES)
             cameraSurfaceTexture.setOnFrameAvailableListener {
@@ -48,9 +39,19 @@ class MainViewModel:ViewModel() {
                 render.drawFrame(textureOES)
                 window.swapBuffers()
             }
-            val camera = CameraImp(context)
+            camera = CameraImp(context)
             camera.mExpectSize = Size(width, height)
             camera.addSurfaceTexture(cameraSurfaceTexture)
+            camera.addNV21CallBack { nv21, width, height ->
+                FacePPController.trackFace(nv21,width, height)
+
+            }
+            FacePPController.checkLicense(context)
+            FacePPController.initTrack { face, max_width, max_height ->
+//                Log.e("point 45","x:${face.points[45].x},y:${face.points[45].y}")
+                render.setRect(face.rect,face.points,max_width,max_height)
+            }
+            FacePPController.prepareFaceTracker(context,90,1080,1920)
             camera.StartPreview()
 
         }

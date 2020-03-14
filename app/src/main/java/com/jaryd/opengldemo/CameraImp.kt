@@ -237,33 +237,48 @@ open class CameraImp(val context: Context){
 
     }
 
+    private var NV21CallBack:((ByteArray,Int,Int)->Unit)?= null
+
+    fun addNV21CallBack(callback:(ByteArray,Int,Int)->Unit){
+        NV21CallBack = callback
+    }
+
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
         backgroundHandler?.post{
-            val buffer = it.acquireNextImage().planes[0].buffer
-            val bytearray = ByteArray(buffer.remaining())
-            buffer.get(bytearray)
-            var output: FileOutputStream? = null
-            try {
-                output = FileOutputStream(File(dirPath,"now.jpg"))
-                if(mCameraFacing == CameraCharacteristics.LENS_FACING_BACK) {
-                    output.write(bytearray)
-                }else{
+            val image = it.acquireNextImage()
+            val nv21 = YUVCover.cover2NV21(image)
+            NV21CallBack?.invoke(nv21,image.width,image.height)
+            image.close()
+        }
+    }
 
-                    val resource = BitmapFactory.decodeByteArray(bytearray,0,bytearray.size)
-                    val matrix = Matrix()
-                    matrix.setScale(-1f,1f)
-                    Bitmap.createBitmap(resource,0,0,resource.width,
-                        resource.height,matrix,false).apply {
-                        this.compress(Bitmap.CompressFormat.JPEG,100,output)
-                        resource.recycle()
-                        this.recycle()
-                    }
+    private fun saveJPEG(it: ImageReader) {
+        val buffer = it.acquireNextImage().planes[0].buffer
+        val bytearray = ByteArray(buffer.remaining())
+        buffer.get(bytearray)
+        var output: FileOutputStream? = null
+        try {
+            output = FileOutputStream(File(dirPath, "now.jpg"))
+            if (mCameraFacing == CameraCharacteristics.LENS_FACING_BACK) {
+                output.write(bytearray)
+            } else {
+
+                val resource = BitmapFactory.decodeByteArray(bytearray, 0, bytearray.size)
+                val matrix = Matrix()
+                matrix.setScale(-1f, 1f)
+                Bitmap.createBitmap(
+                    resource, 0, 0, resource.width,
+                    resource.height, matrix, false
+                ).apply {
+                    this.compress(Bitmap.CompressFormat.JPEG, 100, output)
+                    resource.recycle()
+                    this.recycle()
                 }
-                output.flush()
-                output.close()
-            }catch (e:Exception){
-                e.printStackTrace()
             }
+            output.flush()
+            output.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -295,14 +310,6 @@ open class CameraImp(val context: Context){
             Log.e(TAG, e.toString())
         }
     }
-    fun setAspectRatio(ratio:Int){
-//        closeCamera()
-//        cameraSurfaceview?.setAspectRatio(ratio)
-//        cameraSurfaceview?.post {
-//            openCamera(cameraSurfaceview!!.width,cameraSurfaceview!!.height)
-//        }
-
-    }
 
 
     @SuppressLint("MissingPermission")
@@ -319,6 +326,11 @@ open class CameraImp(val context: Context){
             outputSurfaces.add(Surface(it))
         }
         surfaceTextures.clear()
+        imageReader = ImageReader.newInstance(previewSize.width, previewSize.height,
+            ImageFormat.YUV_420_888, /*maxImages*/ 2).apply {
+            setOnImageAvailableListener(onImageAvailableListener, backgroundHandler)
+        }
+        outputSurfaces.add(imageReader!!.surface)
 //        configureTransform(width, height)
         val manager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
@@ -477,12 +489,6 @@ open class CameraImp(val context: Context){
 
     private fun createCameraPreviewSession() {
         try {
-//            val texture = mSurfaceTexture!!
-//            // We configure the size of default buffer to be the size of camera preview we want.
-//            texture.setDefaultBufferSize(previewSize.width, previewSize.height)
-//
-//            // This is the output Surface we need to start preview.
-//            val surface = Surface(texture)
 
             // We set up a CaptureRequest.Builder with the output Surface.
             previewRequestBuilder = mCameraDevice!!.createCaptureRequest(
@@ -570,10 +576,6 @@ open class CameraImp(val context: Context){
 
     private fun getFocusRange(centerx:Float,centery:Float): MeteringRectangle {
 
-//        val area = Utils.dp2px(context,30f).toInt()
-//        val left = Utils.clamp((centerx-area).toInt(),0,previewSize.height-area)
-//        val top = Utils.clamp((centery-area).toInt(),0,previewSize.width-area)
-//        val rectf = RectF(left.toFloat(), top.toFloat(), (left+area).toFloat(), (top+area).toFloat())
         val rectf = RectF(0F,0F,1F,1F)
         var cameraRect = RectF()
         mCoordTransform.mapRect(cameraRect,rectf)
@@ -626,14 +628,9 @@ open class CameraImp(val context: Context){
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
 
                 // For still image captures, we use the largest available size.
-                val largest = Collections.max(
-                    Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)),
-                    CompareSizesByArea())
-
-                imageReader = ImageReader.newInstance(largest.width, largest.height,
-                    ImageFormat.JPEG, /*maxImages*/ 2).apply {
-                    setOnImageAvailableListener(onImageAvailableListener, backgroundHandler)
-                }
+//                val largest = Collections.max(
+//                    Arrays.asList(*map.getOutputSizes(ImageFormat.NV21)),
+//                    CompareSizesByArea())
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
@@ -664,24 +661,9 @@ open class CameraImp(val context: Context){
                 )
                 Log.e(TAG,"preview width ${previewSize.width},${previewSize.height}")
 
-//                 We fit the aspect ratio of TextureView to the size of preview we picked.
-//                if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-//                    context.runOnUiThread {
-//                        cameraSurfaceview.setAspectRatio(previewSize.width, previewSize.height)
-//                    }
-//                } else {
-//                    context.runOnUiThread {
-//                        cameraSurfaceview.setAspectRatio(previewSize.height, previewSize.width)
-//                    }
-//                }
-
-                // Check if the flash is supported.
-
 
                 this.cameraId = cameraId
                 initTransform(characteristics,width,height)
-                // We've found a viable camera and finished setting up member variables,
-                // so we don't need to iterate through other available cameras.
                 return
             }
         } catch (e: CameraAccessException) {

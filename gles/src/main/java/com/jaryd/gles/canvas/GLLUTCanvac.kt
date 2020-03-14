@@ -5,7 +5,7 @@ import com.jaryd.gles.GLESHelper
 import java.nio.ByteBuffer
 
 class GLLUTCanvac(val lutBuffer:ByteBuffer,val srcWidth:Int,val srcHeight:Int)
-        :GLImageCanvas(mFragmentShader = FRAGMENT_SHADE) {
+        :GLImageCanvas(mFragmentShader = FRAGMENT_SHADER) {
 
     private var LookUpTableHandler = GLESHelper.GL_NOT_INIT
     private var LookUpTableTextureId = GLESHelper.GL_NOT_INIT
@@ -13,20 +13,15 @@ class GLLUTCanvac(val lutBuffer:ByteBuffer,val srcWidth:Int,val srcHeight:Int)
 
     var intensity = 0f //0~1
 
-    override fun initHanders() {
-        super.initHanders()
+    init {
         LookUpTableHandler = GLES30.glGetUniformLocation(mProgramHandler,"lookuptable")
         IntensityHandler = GLES30.glGetUniformLocation(mProgramHandler,"intensity")
     }
 
+
     override fun onDrawbefore() {
         super.onDrawbefore()
-        if(IntensityHandler == GLESHelper.GL_NOT_INIT){
-            IntensityHandler = GLES30.glGetUniformLocation(mProgramHandler,"intensity")
-        }
-        if(LookUpTableHandler == GLESHelper.GL_NOT_INIT){
-            LookUpTableHandler = GLES30.glGetUniformLocation(mProgramHandler,"lookuptable")
-        }
+
         if(LookUpTableTextureId == GLESHelper.GL_NOT_INIT){
             LookUpTableTextureId = GLESHelper.creatTextureID(mTextureType,srcWidth,srcHeight)
         }
@@ -45,7 +40,7 @@ class GLLUTCanvac(val lutBuffer:ByteBuffer,val srcWidth:Int,val srcHeight:Int)
     }
 
     companion object{
-        private val FRAGMENT_SHADE = "" +
+        private val FRAGMENT_SHADER = "" +
                 "precision mediump float;\n" +
                 "varying vec2 textureCoordinate;\n" +
                 "uniform sampler2D inputTexture;\n" +

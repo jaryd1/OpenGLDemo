@@ -11,12 +11,12 @@ import java.nio.FloatBuffer
 import java.util.*
 
 open class GLImageCanvas(
-    protected  var mVertexShader:String?= VERTEX_SHADE,
-    protected var mFragmentShader:String?= FRAGMENT_SHADE
+    protected  var mVertexShader:String?= VERTEX_SHADER,
+    protected var mFragmentShader:String?= FRAGMENT_SHADER
 ){
     companion object {
 
-        internal val VERTEX_SHADE = "" +
+        internal val VERTEX_SHADER = "" +
                 "uniform mat4 mvpMatrix; \n" +
                 "attribute vec4 aPosition; \n" +
                 "attribute vec4 aTextureCoord; \n" +
@@ -25,7 +25,7 @@ open class GLImageCanvas(
                 "   gl_Position = mvpMatrix * aPosition;\n" +
                 "   textureCoordinate = aTextureCoord.xy;\n" +
                 "}"
-        internal val FRAGMENT_SHADE = "" +
+        internal val FRAGMENT_SHADER = "" +
                 "precision mediump float;\n" +
                 "varying vec2 textureCoordinate;\n" +
                 "uniform sampler2D inputTexture;\n" +
@@ -179,7 +179,11 @@ open class GLImageCanvas(
         if(isInitialized){
             GLES30.glDeleteProgram(mProgramHandler)
             mProgramHandler = GLESHelper.GL_NOT_INIT
+            GLES30.glDeleteVertexArrays(1, intArrayOf(mVAOHandler),0)
+            GLES30.glDeleteBuffers(2, intArrayOf(mVBOHandler,mEBOHandler),0)
+
         }
+
     }
 
     open fun getMvpMatrix()=mMvpMatrix
@@ -215,6 +219,7 @@ open class GLImageCanvas(
         runTasks()
         onDrawTexture(data,width,height)
         onDrawAfter()
+
 
         GLES30.glUseProgram(0)
     }
