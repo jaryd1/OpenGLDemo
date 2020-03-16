@@ -4,16 +4,18 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.util.SparseArray
 import androidx.core.util.forEach
+import androidx.core.util.remove
 import com.jaryd.gles.canvas.*
 import com.jaryd.gles.utils.CoordinationUtils
+import com.jaryd.gles.utils.StickerTexture
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
 class GLESRender {
 
-    private  var mVertexs:FloatBuffer
-    private  var mTextures:FloatBuffer
-    private  var mInvertTextures:FloatBuffer
+    private var mDisHeight = 0
+    private var mDisWidth = 0
+
     private val canvas = SparseArray<GLImageCanvas>()
     private val CAMERA = 0
     private val IMAGE = 1
@@ -23,13 +25,9 @@ class GLESRender {
 
 
     init {
-        mVertexs =GLESHelper.creatFloatBuffer(CoordinationUtils.mVertexsCoor)
-        mTextures = GLESHelper.creatFloatBuffer(CoordinationUtils.mTexturesCoor)
-        mInvertTextures = GLESHelper.creatFloatBuffer(CoordinationUtils.mInvertTexturesCoor)
+
         canvas.append(CAMERA, GLImageOESCanvas())
         canvas.append(IMAGE, GLImageCanvas())
-        canvas.append(NV21, GLNV21Canvas())
-        canvas.append(FILTER,GLFACEPPCanvas())
     }
 
 
@@ -38,16 +36,29 @@ class GLESRender {
             value.onDisplaySizeChanged(width, height)
         }
         canvas[CAMERA].initFrameBuffer(width,height)
-        canvas[FILTER].initFrameBuffer(width,height)
+        mDisHeight = height
+        mDisWidth = width
     }
 
-    fun setRect(rect: Rect,points:Array<out PointF>,max_width:Int,max_height:Int){
-        (canvas[FILTER] as GLFACEPPCanvas).apply {
-            this.rect = rect
-            this.points = points
-            this.needReDraw = true
-            this.MaxHeight = max_height
-            this.MaxWidth =  max_width
+    fun useSticker(stickers: ArrayList<StickerTexture>){
+        canvas[IMAGE]?.release()
+        canvas.delete(IMAGE)
+        val stickCanvas = GLStickerCanvas(stickers)
+        stickCanvas.onDisplaySizeChanged(mDisWidth,mDisHeight)
+        canvas.append(IMAGE,stickCanvas)
+    }
+
+    fun setRect(rect: Rect,points:Array<PointF>,pitch:Float,yaw:Float,max_width:Int,max_height:Int){
+        canvas[IMAGE]?.apply {
+            (this as GLStickerCanvas).apply {
+                this.pic_height = max_height
+                this.pic_width = max_width
+                this.faceRect = rect
+                this.points = points
+                this.needDraw = true
+                this.pitch = pitch
+                this.yaw = yaw
+            }
         }
 
     }
@@ -59,8 +70,8 @@ class GLESRender {
 
     fun drawFrame(textureId:Int){
             var texture = canvas[CAMERA].drawFrameBuffer(textureId)
-            canvas[FILTER].drawFrame(texture)
-//            canvas[IMAGE].drawFrame(texture)
+//            canvas[FILTER].drawFrame(texture)
+            canvas[IMAGE].drawFrame(texture)
     }
 
     fun drawNV21(nv21:ByteArray,width: Int,height: Int){

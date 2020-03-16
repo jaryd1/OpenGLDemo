@@ -19,5 +19,6 @@
             android:layout_height="match_parent"
             android:onSurfaceTextureAvaliable="@{viewmodel.onSurfaceTextureAvaliable}"/>
 
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

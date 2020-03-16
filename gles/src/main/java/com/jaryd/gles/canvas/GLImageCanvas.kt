@@ -181,7 +181,8 @@ open class GLImageCanvas(
             mProgramHandler = GLESHelper.GL_NOT_INIT
             GLES30.glDeleteVertexArrays(1, intArrayOf(mVAOHandler),0)
             GLES30.glDeleteBuffers(2, intArrayOf(mVBOHandler,mEBOHandler),0)
-
+            if(mTextureId != GLESHelper.GL_NOT_INIT)
+                GLES30.glDeleteTextures(1, intArrayOf(mTextureId),0)
         }
 
     }

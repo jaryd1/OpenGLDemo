@@ -34,5 +34,17 @@ class CoordinationUtils {
             -1.0f,1.0f,0.0f,1.0f,
             1.0f,1.0f,1.0f,1.0f
         )
+//        val sx = -0.5f
+//        val sy = -0.5f
+//        val ex = 0.5f
+//        val ey =0.5f
+//
+//
+//        internal val mVBOArray = floatArrayOf(
+//            sx,sy,0.0f,0.0f,
+//            ex,sy,1.0f,0.0f,
+//            sx,ey,0.0f,1.0f,
+//            ex,ey,1.0f,1.0f
+//        )
     }
 }
