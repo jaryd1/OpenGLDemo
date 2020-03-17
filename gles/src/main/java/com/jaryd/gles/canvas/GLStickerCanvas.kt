@@ -27,9 +27,27 @@ class GLStickerCanvas(val stickers: ArrayList<StickerTexture>):GLImageCanvas() {
 
 
 
-    private fun processMatrix(){
+    private fun processMatrix(center_x:Float,center_y:Float){
         Matrix.setIdentityM(matrix,0)
-        Matrix.setRotateEulerM(matrix,0,yaw,pitch,0f)
+        Matrix.setIdentityM(modelMatrix,0)
+
+        Matrix.translateM(modelMatrix,0,center_x,center_y,0f)
+        //姿态处理，数据有问题
+//        Matrix.rotateM(modelMatrix,0,0f,0f,0f,1f)
+//        Matrix.rotateM(modelMatrix,0,pitch,1f,0f,0f)
+//        Matrix.rotateM(modelMatrix,0,yaw,0f,1f,0f)
+        Matrix.translateM(modelMatrix,0,-center_x,-center_y,0f)
+        Matrix.setIdentityM(viewMatrix,0)
+        Matrix.setLookAtM(viewMatrix,0,0f,0f,6f,0f
+            ,0f,0f,0f,1f,0f)
+        Matrix.multiplyMM(matrix,0,viewMatrix,0,modelMatrix,0)
+
+        Matrix.setIdentityM(projectMatrix,0)
+        val r = 1/2f  // 摄像机位于(0,0,6),near平面 为3
+        val b = 1/2f
+        Matrix.frustumM(projectMatrix,0,-r,r,-b,b,3f,9f)
+
+        Matrix.multiplyMM(matrix,0,projectMatrix,0,matrix,0)
     }
 
     override fun onDrawAfter() {
@@ -51,9 +69,7 @@ class GLStickerCanvas(val stickers: ArrayList<StickerTexture>):GLImageCanvas() {
 //
                 GLES30.glEnable(GLES30.GL_BLEND)
                 GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
-                processMatrix()
                 sticker.updateIndex(System.currentTimeMillis())
-                GLES30.glUniformMatrix4fv(mMvpMatrixHandler, 1, false, matrix, 0)
                 if (sticker.textureId == GLESHelper.GL_NOT_INIT)
                     sticker.textureId =
                         GLESHelper.creatTextureID(mTextureType, sticker.width, sticker.height)
@@ -69,6 +85,8 @@ class GLStickerCanvas(val stickers: ArrayList<StickerTexture>):GLImageCanvas() {
                 vertex_pos_Buffer.clear()
 
                 calculatingCoord(sticker)
+                GLES30.glUniformMatrix4fv(mMvpMatrixHandler, 1, false, matrix, 0)
+
                 vertex_pos_Buffer.position(0)
                 texture_pos_Buffer.position(0)
                 GLES30.glEnableVertexAttribArray(mPositionHandler)
@@ -115,6 +133,7 @@ class GLStickerCanvas(val stickers: ArrayList<StickerTexture>):GLImageCanvas() {
         val t1x = 2 * right / mDisplayWidth.toFloat() - 1f
         val t0y = 1f - 2 * bottom / mDisplayHeight.toFloat()
         val t1y = 1f - 2 * top / mDisplayHeight.toFloat()
+        processMatrix((t1x+t0x)/2,(t0y+t1y)/2)
         vertex_pos_Buffer.put(
             floatArrayOf(
                 t0x,

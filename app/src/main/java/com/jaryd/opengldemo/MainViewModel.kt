@@ -1,6 +1,7 @@
 package com.jaryd.opengldemo
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.os.Environment
@@ -17,6 +18,7 @@ import com.jaryd.gles.utils.StickerTexture
 import com.jaryd.gles.utils.Stickers
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.ByteBuffer
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -38,6 +40,7 @@ class MainViewModel:ViewModel() {
             render.setDisplaySize(width, height)
             Stickers.init(context,"cat")
             render.useSticker(StickerTexture.createStickers(context,Stickers.stickers))
+
             egl.makeNothingCurrent()
 
             val textureOES = GLESHelper.creatTextureID(GLES11Ext.GL_TEXTURE_EXTERNAL_OES)

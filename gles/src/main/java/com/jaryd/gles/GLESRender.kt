@@ -46,6 +46,7 @@ class GLESRender {
         val stickCanvas = GLStickerCanvas(stickers)
         stickCanvas.onDisplaySizeChanged(mDisWidth,mDisHeight)
         canvas.append(IMAGE,stickCanvas)
+
     }
 
     fun setRect(rect: Rect,points:Array<PointF>,pitch:Float,yaw:Float,max_width:Int,max_height:Int){
@@ -81,6 +82,6 @@ class GLESRender {
 
 
     fun drawFrame(data:ByteBuffer,width: Int,height: Int){
-
+        canvas[IMAGE].drawFrame(data, width, height)
     }
 }
